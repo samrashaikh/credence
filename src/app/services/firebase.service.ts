@@ -12,14 +12,23 @@ import {
 } from 'firebase/auth';
 import { 
   getFirestore, 
-  Firestore, 
-  collection, 
+  Firestore,
   doc, 
   setDoc, 
-  getDocs, 
-  getDoc 
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs
 } from 'firebase/firestore';
 import { UserProfile } from '../../types/evidence.types';
+import {
+  getStorage,
+  FirebaseStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from 'firebase/storage';
 
 @Injectable({
   providedIn: 'root'
@@ -34,6 +43,7 @@ export class FirebaseService {
   private app: FirebaseApp | null = null;
   private auth: Auth | null = null;
   private db: Firestore | null = null;
+  private storage: FirebaseStorage | null = null;
 
   constructor() {
     this.initFirebase();
@@ -43,12 +53,12 @@ export class FirebaseService {
     try {
       // Safe environment check or fallback config
       const firebaseConfig = {
-        apiKey: (window as any).__FIREBASE_API_KEY__ || "AIzaSyDummyKeyForSandboxSimulationOnly12345",
-        authDomain: "credence-evidence-vault.firebaseapp.com",
-        projectId: "credence-evidence-vault",
-        storageBucket: "credence-evidence-vault.appspot.com",
-        messagingSenderId: "197315761040",
-        appId: "1:197315761040:web:89a2b8e34f19b22a"
+        apiKey: "AIzaSyBlYGEQawFIWPJtIGKPReIavLITjOPSYR0",
+        authDomain: "credence-career-vault-2026.firebaseapp.com",
+        projectId: "credence-career-vault-2026",
+        storageBucket: "credence-career-vault-2026.firebasestorage.app",
+        messagingSenderId: "899336391071",
+        appId: "1:899336391071:web:e58c4b20bf28436c35d5aa"
       };
 
       // Check if real config exists in localStorage or window
@@ -57,15 +67,14 @@ export class FirebaseService {
         try {
           this.currentUser.set(JSON.parse(savedUser));
         } catch {
-          this.setDefaultDemoUser();
+          localStorage.removeItem('credence_user_session');
         }
-      } else {
-        this.setDefaultDemoUser();
       }
 
       this.app = initializeApp(firebaseConfig);
       this.auth = getAuth(this.app);
       this.db = getFirestore(this.app);
+      this.storage = getStorage(this.app);
       this.isFirebaseConnected.set(true);
 
       onAuthStateChanged(this.auth, (fbUser: FirebaseUser | null) => {
@@ -85,14 +94,11 @@ export class FirebaseService {
         this.isAuthLoading.set(false);
       });
     } catch (err: any) {
-      console.warn("Firebase initialization in preview/sandbox mode:", err?.message || err);
-      this.isFirebaseConnected.set(false);
-      if (!this.currentUser()) {
-        this.setDefaultDemoUser();
+        console.warn("Firebase initialization failed:", err?.message || err);
+        this.isFirebaseConnected.set(false);
+        this.isAuthLoading.set(false);
       }
-      this.isAuthLoading.set(false);
     }
-  }
 
   private setDefaultDemoUser(): void {
     const demoProfile: UserProfile = {
@@ -110,7 +116,7 @@ export class FirebaseService {
   async signInWithGoogle(): Promise<void> {
     this.authError.set(null);
     if (!this.auth) {
-      this.simulateLogin('google');
+      this.authError.set('Google Sign-In is currently unavailable.');
       return;
     }
 
@@ -132,9 +138,8 @@ export class FirebaseService {
       this.currentUser.set(profile);
       localStorage.setItem('credence_user_session', JSON.stringify(profile));
     } catch (err: any) {
-      console.warn("Google popup error (falling back gracefully for iframe environment):", err);
-      // In sandbox iframes popups may be blocked; simulate verified session smoothly
-      this.simulateLogin('google');
+      console.error("Google sign-in failed:", err);
+      this.authError.set(err?.message || 'Google sign-in failed');
     }
   }
 
@@ -224,4 +229,118 @@ export class FirebaseService {
       return false;
     }
   }
+
+  async uploadArtifactFile(
+    uid: string,
+    artifactId: string,
+    file: File
+  ): Promise<{ storageUrl: string; storagePath: string }> {
+    if (!this.storage) {
+      throw new Error('Firebase Storage is not initialized.');
+    }
+
+    const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+    const storagePath =
+      `users/${uid}/artifacts/${artifactId}/${safeFileName}`;
+
+    const fileRef = ref(this.storage, storagePath);
+
+    await uploadBytes(fileRef, file, {
+      contentType: file.type || 'application/octet-stream'
+    });
+
+    const storageUrl = await getDownloadURL(fileRef);
+
+    return {
+      storageUrl,
+      storagePath
+    };
+  }
+
+  async getUserArtifacts(uid: string): Promise<any[]> {
+  if (!this.db) {
+    throw new Error('Firestore is not initialized.');
+  }
+
+  const artifactsRef = collection(this.db, 'evidence_artifacts');
+
+  const q = query(
+    artifactsRef,
+    where('ownerUid', '==', uid)
+  );
+
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map(docSnapshot => ({
+    ...docSnapshot.data()
+  }));
+  }
+
+  async getUserEvidenceProfiles(uid: string): Promise<any[]> {
+  if (!this.db) {
+    throw new Error('Firestore is not initialized.');
+  }
+
+  const profilesRef = collection(
+    this.db,
+    'evidence_profiles'
+  );
+
+  const q = query(
+    profilesRef,
+    where('ownerUid', '==', uid)
+  );
+
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map(docSnapshot => ({
+    ...docSnapshot.data()
+  }));
+}
+
+async getUserResumeTransformations(uid: string): Promise<any[]> {
+  if (!this.db) {
+    throw new Error('Firestore is not initialized.');
+  }
+
+  const transformationsRef = collection(
+    this.db,
+    'resume_transformations'
+  );
+
+  const q = query(
+    transformationsRef,
+    where('ownerUid', '==', uid)
+  );
+
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map(docSnapshot => ({
+    ...docSnapshot.data()
+  }));
+}
+
+async getUserLinkedInTransformations(uid: string): Promise<any[]> {
+  if (!this.db) {
+    throw new Error('Firestore is not initialized.');
+  }
+
+  const transformationsRef = collection(
+    this.db,
+    'linkedin_transformations'
+  );
+
+  const q = query(
+    transformationsRef,
+    where('ownerUid', '==', uid)
+  );
+
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map(docSnapshot => ({
+    ...docSnapshot.data()
+  }));
+}
+
 }

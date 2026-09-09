@@ -1,0 +1,20 @@
+{
+  "evidenceProfile": {
+    "metrics": [],
+    "summary": "Abhinaya expressed gratitude for learning from a project team and for Samra's supportive collaboration.",
+    "role": "LEAD FE ENGINEER",
+    "actions": [
+      {
+        "directQuote": "I learned a lot from this pod, and it was great working with you, You were always supportive, thanks for that",
+        "description": "Expressed gratitude for learning from a project team and for a colleague's supportive collaboration.",
+        "confidence": 100
+      }
+    ],
+    "impactNarrative": "Abhinaya valued the learning experience and supportive collaboration.",
+    "technologies": [],
+    "sourceBackingRatio": 95
+  },
+  "rawArtifactText": "",
+  "targetRole": "Staff / Principal Engineer"
+}
+

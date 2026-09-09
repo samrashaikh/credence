@@ -1,0 +1,85 @@
+<div class="login-page">
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <main class="login-shell animate-fade-in">
+
+    <div class="brand">
+      <div class="brand-mark">C</div>
+
+      <div class="brand-name">
+        CREDENCE
+      </div>
+    </div>
+
+    <section class="login-card">
+
+      <div class="eyebrow">
+        <span class="eyebrow-dot"></span>
+        YOUR CAREER EVIDENCE, PRESERVED
+      </div>
+
+      <h1>
+        Your work deserves
+        <span>a record.</span>
+      </h1>
+
+      <p class="intro">
+        Preserve the evidence behind your achievements.
+        Turn real work into grounded career proof and keep
+        it with you across every job.
+      </p>
+
+      <button
+        type="button"
+        class="google-button"
+        [disabled]="isSigningIn"
+        (click)="continueWithGoogle()"
+      >
+        @if (!isSigningIn) {
+          <span class="google-icon">G</span>
+          <span>Continue with Google</span>
+        } @else {
+          <span class="spinner"></span>
+          <span>Signing you in...</span>
+        }
+      </button>
+
+      @if (errorMessage) {
+        <div class="error-message">
+          {{ errorMessage }}
+        </div>
+      }
+
+      <div class="privacy">
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M6 10V8a6 6 0 0 1 12 0v2M5 10h14v10H5V10Z"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+
+        Your evidence stays private to your account.
+      </div>
+
+    </section>
+
+    <div class="trust-line">
+      <span>Evidence-backed</span>
+      <span class="separator">•</span>
+      <span>Human-approved</span>
+      <span class="separator">•</span>
+      <span>Yours to keep</span>
+    </div>
+
+  </main>
+</div>

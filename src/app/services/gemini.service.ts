@@ -1,5 +1,10 @@
 import { Injectable, signal } from '@angular/core';
-import { EvidenceProfile, ResumeTransformation } from '../../types/evidence.types';
+import {
+  ClaimCitation,
+  EvidenceProfile,
+  ResumeTransformation,
+  LinkedInPostTransformation
+} from '../../types/evidence.types';
 
 export interface ExtractionRequest {
   rawContentText: string;
@@ -16,6 +21,19 @@ export interface BulletGenerationRequest {
   rawArtifactText: string;
   targetRole: string;
   bulletFormat: string;
+}
+
+export interface LinkedInPostGenerationRequest {
+  evidenceProfile: EvidenceProfile;
+  rawArtifactText: string;
+  targetRole: string;
+}
+
+export interface LinkedInPostGenerationResult {
+  headline: string;
+  postText: string;
+  overallConfidence: number;
+  claims: ClaimCitation[];
 }
 
 @Injectable({
@@ -84,9 +102,9 @@ export class GeminiService {
 
       return profile;
     } catch (err: any) {
-      console.warn("API extraction error, using intelligent client-side parser fallback:", err);
-      this.lastAnalysisError.set(err.message || 'Gemini extraction error');
-      return this.clientFallbackExtraction(req);
+        console.error('Gemini evidence extraction failed:', err);
+        this.lastAnalysisError.set(err.message || 'Gemini extraction error');
+        throw err;
     } finally {
       this.isAnalyzing.set(false);
     }
@@ -138,13 +156,73 @@ export class GeminiService {
         return trans;
       }
 
-      return this.clientFallbackBulletGeneration(req, artifactId);
-    } catch (err: any) {
-      console.warn("API bullet generator fallback:", err);
+      throw new Error(
+  'Gemini did not return a valid grounded transformation.'
+);
+
+    }  catch (err: any) {
+      console.error('Gemini bullet generation failed:', err);
+      throw err;
       return this.clientFallbackBulletGeneration(req, artifactId);
     } finally {
       this.isGeneratingBullets.set(false);
     }
+  }
+
+  async generateLinkedInPost(
+  req: LinkedInPostGenerationRequest,
+  artifactId: string
+): Promise<LinkedInPostTransformation> {
+  this.isGeneratingBullets.set(true);
+
+  try {
+    const response = await fetch('/api/gemini/generate-linkedin-post', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(req)
+    });
+
+    const rawData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        rawData?.error || 'LinkedIn post generation failed.'
+      );
+    }
+
+    if (!rawData?.linkedinPost?.postText) {
+      throw new Error(
+        'Gemini did not return a valid grounded LinkedIn post.'
+      );
+    }
+
+    const post = rawData.linkedinPost;
+
+    const transformation: LinkedInPostTransformation = {
+      id: 'li-' + Math.random().toString(36).substring(2, 9),
+      artifactId,
+      profileId: req.evidenceProfile.id,
+      generatedAt: new Date().toISOString(),
+      targetRole: req.targetRole,
+
+      headline: post.headline || `Grounded LinkedIn Post for ${req.targetRole}`,
+      postText: post.postText,
+
+      claims: post.claims || [],
+      overallConfidence: post.overallConfidence || 95,
+
+      reviewStatus: 'pending',
+    };
+
+    return transformation;
+      } catch (err: any) {
+        console.error('Gemini LinkedIn post generation failed:', err);
+        throw err;
+      } finally {
+        this.isGeneratingBullets.set(false);
+      }
   }
 
   private clientFallbackExtraction(req: ExtractionRequest): EvidenceProfile {

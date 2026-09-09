@@ -17,7 +17,7 @@ import { EvidenceVaultService } from '../../services/evidence-vault.service';
           <div class="flex items-center gap-2">
             <a routerLink="/vault" class="text-xs text-slate-400 hover:text-white flex items-center gap-1">
               <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-              Vault
+             Evidence Vault
             </a>
             <span class="text-slate-600">/</span>
             <span class="text-xs font-semibold text-blue-400 font-mono">Review Queue</span>
@@ -99,10 +99,10 @@ import { EvidenceVaultService } from '../../services/evidence-vault.service';
                 <div class="flex items-center gap-2">
                   @if (item.artifact.provenanceType === 'source_backed') {
                     <span class="px-2 py-0.5 text-[10px] font-bold font-mono text-emerald-300 bg-emerald-950/60 rounded border border-emerald-800/60">
-                      SOURCE_BACKED
+                      SOURCE-BACKED
                     </span>
                   }
-                  <span class="text-[10px] text-slate-400 font-mono">Framework: {{ item.bullet.framework }}</span>
+                  <!-- <span class="text-[10px] text-slate-400 font-mono">Framework: {{ item.bullet.framework }}</span> -->
                 </div>
               </div>
 

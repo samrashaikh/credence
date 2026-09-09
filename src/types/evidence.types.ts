@@ -1,13 +1,4 @@
-export type ArtifactCategory = 
-  | 'rfc'
-  | 'metrics_dashboard'
-  | 'code_review'
-  | 'presentation'
-  | 'report'
-  | 'contract'
-  | 'postmortem'
-  | 'other';
-
+export type ArtifactCategory = string;
 export type ProvenanceType = 'source_backed' | 'self_reported';
 
 export type BulletFramework = 
@@ -107,6 +98,23 @@ export interface ResumeTransformation {
   overallStatus: 'draft' | 'partially_approved' | 'approved' | 'rejected';
 }
 
+export interface LinkedInPostTransformation {
+  id: string;
+  artifactId: string;
+  profileId: string;
+  generatedAt: string;
+  targetRole: string;
+  headline: string;
+  postText: string;
+  claims: ClaimCitation[];
+  overallConfidence: number;
+  reviewStatus: ReviewStatus;
+  userNotes?: string;
+  editedText?: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+}
+
 export interface EvidenceArtifact {
   id: string;
   title: string;
@@ -124,6 +132,7 @@ export interface EvidenceArtifact {
   transformations: ResumeTransformation[];
   isArchived?: boolean;
   base64Thumbnail?: string;
+  linkedinTransformations?: LinkedInPostTransformation[];
 }
 
 export interface VaultStats {
